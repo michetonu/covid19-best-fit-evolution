@@ -29,14 +29,6 @@ def second_derivative(x, a, c, d):
     )
 
 
-def third_derivative(x, a, c, d):
-    return (
-            a
-            * (2 * c**2 * np.exp(-2*c * (x - d))) / (np.exp(-c * (x - d)) + 1)**3
-            * -(c**2 * np.exp(-c * (x - d))) / (np.exp(-c * (x - d)) + 1)**2
-    )
-
-
 def fit_predict(x, y, f, x_pred=None):
     popt, pcov = opt.curve_fit(f, x, y, maxfev=100000)
     if x_pred is None:
@@ -45,8 +37,7 @@ def fit_predict(x, y, f, x_pred=None):
 
 
 def compute_derivative(df, column, x, f, x_pred=None):
-    y = np.array([float(x) for x in (df[column] - df[column].shift(1)).fillna(0).values])
-    y = scale(y)
+    y = np.array([float(x) for x in (df[column] - df[column].shift(1)).bfill().values])
     return fit_predict(x, y, f, x_pred)
 
 
@@ -87,31 +78,48 @@ if __name__ == "__main__":
     y = scale(df['confirmed'].values)
     df['confirmed_fit'] = fit_predict(x, y, logistic)
     df['first_dev_confirmed'] = compute_derivative(df, 'confirmed_fit', x, first_derivative)
-    df['second_dev_confirmed'] = compute_derivative(df, 'first_dev_confirmed', x, second_derivative)
-    df['third_dev_confirmed'] = compute_derivative(df, 'second_dev_confirmed', x, second_derivative)
+    df['second_dev_confirmed'] = (
+            df['first_dev_confirmed'] - df['first_dev_confirmed'].shift()
+    )
+
+    df['third_dev_confirmed'] = (
+            df['second_dev_confirmed'] - df['second_dev_confirmed'].shift()
+    )
 
     df_projected['confirmed_fit'] = fit_predict(x, y, logistic, x_pred=x_future)
-    df_projected['first_dev_confirmed'] = compute_derivative(df, 'confirmed_fit', x,
+    df_projected['first_dev_confirmed'] = compute_derivative(df_projected, 'confirmed_fit',
+                                                             x_future,
                                                              first_derivative, x_pred=x_future)
-    df_projected['second_dev_confirmed'] = compute_derivative(df, 'first_dev_confirmed',
-                                                              x, second_derivative, x_pred=x_future)
-    df_projected['third_dev_confirmed'] = compute_derivative(df, 'second_dev_confirmed',
-                                                             x, second_derivative, x_pred=x_future)
+    df_projected['second_dev_confirmed'] = (
+            df_projected['first_dev_confirmed'] - df_projected['first_dev_confirmed'].shift()
+    )
+
+    df_projected['third_dev_confirmed'] = (
+            df_projected['second_dev_confirmed'] - df_projected['second_dev_confirmed'].shift()
+    )
 
     y = scale(df['deaths'].values)
     df['deaths_fit'] = fit_predict(x, y, logistic)
     df['first_dev_deaths'] = compute_derivative(df, 'deaths_fit', x, first_derivative)
-    df['second_dev_deaths'] = compute_derivative(df, 'first_dev_deaths', x, second_derivative)
-    df['third_dev_deaths'] = compute_derivative(df, 'second_dev_deaths', x, third_derivative)
+    df['second_dev_deaths'] = (
+            df['first_dev_deaths'] - df['first_dev_deaths'].shift()
+    )
+
+    df['third_dev_deaths'] = (
+            df['second_dev_deaths'] - df['second_dev_deaths'].shift()
+    )
 
     df_projected['deaths_fit'] = fit_predict(x, y, logistic, x_pred=x_future)
-    df_projected['first_dev_deaths'] = compute_derivative(df_projected, 'deaths_fit', x_future,
-                                                          first_derivative)
-    df_projected['second_dev_deaths'] = compute_derivative(df_projected, 'first_dev_deaths',
-                                                           x_future, second_derivative)
-    df_projected['third_dev_deaths'] = compute_derivative(df_projected, 'second_dev_deaths',
-                                                          x_future, third_derivative)
+    df_projected['first_dev_deaths'] = compute_derivative(df_projected, 'deaths_fit',
+                                                             x_future,
+                                                             first_derivative, x_pred=x_future)
+    df_projected['second_dev_deaths'] = (
+            df_projected['first_dev_deaths'] - df_projected['first_dev_deaths'].shift()
+    )
 
+    df_projected['third_dev_deaths'] = (
+            df_projected['second_dev_deaths'] - df_projected['second_dev_deaths'].shift()
+    )
     fig, axs = plt.subplots(4, 2, figsize=(15, 8))
     date = df.index
     date_proj = df_projected.index
