@@ -7,6 +7,9 @@ from sklearn.preprocessing import MinMaxScaler
 import seaborn as sns
 
 
+DATA_PATH = "/Users/michele/Documents/covid19/docs/timeseries.json"
+MAX_DAYS_AHEAD = 100
+
 def scale(y):
     m = MinMaxScaler()
     y = m.fit_transform(y.reshape(-1, 1))
@@ -59,22 +62,22 @@ def compute_all_derivatives(df, column, times_pred):
     return df
 
 
-if __name__ == "__main__":
-    max_days = 100
+def run_fit_on_single_country(country):
+
     min_confirmed = 40
 
-    country = 'Korea, South'
-    data_path = "/Users/michele/Documents/covid19/docs/timeseries.json"
-
-    with open(data_path, 'r') as ff:
+    with open(DATA_PATH, 'r') as ff:
         data = json.load(ff)
+
     # print(data.keys())
     df = pd.DataFrame(data[country])
 
     df = df[df['confirmed'] > min_confirmed]
+    # df['confirmed'] = df['confirmed'].rolling(2, min_periods=2, center=True).mean()
+
     df = df.reset_index(drop=True)
 
-    future_dates = list(np.linspace(0, max_days, num=max_days))
+    future_dates = list(np.linspace(0, MAX_DAYS_AHEAD, num=MAX_DAYS_AHEAD))
     df_projected = pd.DataFrame(index=future_dates)
 
     x = np.array([float(x) for x in range(len(df))])
@@ -123,3 +126,7 @@ if __name__ == "__main__":
     plt.suptitle(f"Country: {country}")
 
     plt.show()
+
+
+if __name__ == "__main__":
+    run_fit_on_single_country('Italy')
