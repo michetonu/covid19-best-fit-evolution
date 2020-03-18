@@ -1,4 +1,4 @@
-DATA_URL = "https://github.com/pomber/covid19/blob/master/docs/timeseries.json"
+DATA_URL = "https://raw.githubusercontent.com/pomber/covid19/master/docs/timeseries.json"
 
 # Number of days to plot
 MAX_DAYS_AHEAD = 100

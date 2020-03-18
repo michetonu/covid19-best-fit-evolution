@@ -11,7 +11,8 @@ def get_json_from_url(url):
     """Get a json from a URL."""
     response = urlopen(url)
 
-    return json.loads(response.read())
+    return json.loads(response.read().decode())
+
 
 def scale(y):
     """Scale the data between 0 and 1 using a min-max scaler"""
