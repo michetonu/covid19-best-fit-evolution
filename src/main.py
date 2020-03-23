@@ -79,4 +79,4 @@ def run_fit_on_single_country(country):
 
 
 if __name__ == "__main__":
-    run_fit_on_single_country('Italy')
+    run_fit_on_single_country('China')
