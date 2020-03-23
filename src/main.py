@@ -51,12 +51,13 @@ def run_fit_on_single_country(country):
     x = df.index
     x_proj = df_projected.index
 
-    utils.plot(x, df['confirmed_fit'], ax=axs[0, 0], points=df['confirmed'], title='confirmed')
+    utils.plot(x, df['confirmed_fit'], ax=axs[0, 0], points=df['confirmed'], title='confirmed',
+               label='best fit', scatter_label='actual')
     utils.plot(x, df['first_dev_confirmed'], ax=axs[1, 0], title="f'(x)")
     utils.plot(x, df['second_dev_confirmed'], ax=axs[2, 0], title="f''(x)")
     utils.plot(x, df['third_dev_confirmed'], ax=axs[3, 0], title="f'''(x)")
 
-    utils.plot_projection(x_proj, df_projected['confirmed_fit'], ax=axs[0, 0])
+    utils.plot_projection(x_proj, df_projected['confirmed_fit'], ax=axs[0, 0], label='projected')
     utils.plot_projection(x_proj, df_projected['first_dev_confirmed'], ax=axs[1, 0])
     utils.plot_projection(x_proj, df_projected['second_dev_confirmed'], ax=axs[2, 0])
     utils.plot_projection(x_proj, df_projected['third_dev_confirmed'], ax=axs[3, 0])
@@ -71,6 +72,7 @@ def run_fit_on_single_country(country):
     utils.plot_projection(x_proj, df_projected['second_dev_deaths'], ax=axs[2, 1])
     utils.plot_projection(x_proj, df_projected['third_dev_deaths'], ax=axs[3, 1])
 
+    axs[0, 0].legend(loc=(0.8, 0.1))
     fig.autofmt_xdate()
     fig.text(0.5, 0.01, f'days since {config.MIN_CONFIRMED_CASES} confirmed cases', ha='center')
     plt.suptitle(f"Country: {country}. Last update: {date}")
@@ -79,4 +81,4 @@ def run_fit_on_single_country(country):
 
 
 if __name__ == "__main__":
-    run_fit_on_single_country('China')
+    run_fit_on_single_country('Italy')

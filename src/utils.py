@@ -45,16 +45,16 @@ def compute_derivative(df, column, x, f):
     return fit_predict(x, y, f)
 
 
-def plot(x, y, ax, title, points=None):
+def plot(x, y, ax, title, points=None, label=None, scatter_label=None):
     """Plot some data points on a line (and optionally a scatter plot)"""
-    sns.lineplot(x, y, ax=ax)
+    sns.lineplot(x, y, ax=ax, label=label)
     ax.set_title(title)
     ax.set_xlabel('')
     ax.set_ylabel('')
     if points is not None:
-        sns.scatterplot(x, scale(points.values), ax=ax, color='black')
+        sns.scatterplot(x, scale(points.values), ax=ax, color='black', label=scatter_label)
 
 
-def plot_projection(x, y, ax):
+def plot_projection(x, y, ax, label=None):
     """Plot the projected future line."""
-    sns.lineplot(x, y, ax=ax, linewidth=1, color='red', alpha=0.5)
+    sns.lineplot(x, y, ax=ax, linewidth=1, color='red', alpha=0.5, label=label)
