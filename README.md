@@ -7,10 +7,10 @@ This tool is not meant to be used to make predictions in the future. The best fi
 
 ## Examples:
 
-Italy (as of 2019-03-22)
+**Italy**: (as of 2019-03-22)
 
 ![alt text](https://github.com/michetonu/covid19-rate-of-change/blob/master/examples/italy.png?raw=true)
 
-China (as of 2019-03-22)
+**China**: (as of 2019-03-22)
 
 ![alt text](https://github.com/michetonu/covid19-rate-of-change/blob/master/examples/china.png?raw=true)
