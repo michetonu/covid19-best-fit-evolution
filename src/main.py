@@ -20,11 +20,10 @@ def compute_all_derivatives(df, column, times_pred):
 def run_fit_on_single_country(country):
     data = utils.get_json_from_url(config.DATA_URL)
 
-    # print(data.keys())
     df = pd.DataFrame(data[country])
+    date = df['date'].values[-1]
 
     df = df[df['confirmed'] > config.MIN_CONFIRMED_CASES]
-    # df['confirmed'] = df['confirmed'].rolling(2, min_periods=2, center=True).mean()
 
     df = df.reset_index(drop=True)
 
@@ -49,32 +48,32 @@ def run_fit_on_single_country(country):
     df_projected = compute_all_derivatives(df_projected, 'deaths', times_pred=x_future)
 
     fig, axs = plt.subplots(4, 2, figsize=(15, 8))
-    date = df.index
-    date_proj = df_projected.index
+    x = df.index
+    x_proj = df_projected.index
 
-    utils.plot(date, df['confirmed_fit'], ax=axs[0, 0], points=df['confirmed'], title='confirmed')
-    utils.plot(date, df['first_dev_confirmed'], ax=axs[1, 0], title="f'(x)")
-    utils.plot(date, df['second_dev_confirmed'], ax=axs[2, 0], title="f''(x)")
-    utils.plot(date, df['third_dev_confirmed'], ax=axs[3, 0], title="f'''(x)")
+    utils.plot(x, df['confirmed_fit'], ax=axs[0, 0], points=df['confirmed'], title='confirmed')
+    utils.plot(x, df['first_dev_confirmed'], ax=axs[1, 0], title="f'(x)")
+    utils.plot(x, df['second_dev_confirmed'], ax=axs[2, 0], title="f''(x)")
+    utils.plot(x, df['third_dev_confirmed'], ax=axs[3, 0], title="f'''(x)")
 
-    utils.plot_projection(date_proj, df_projected['confirmed_fit'], ax=axs[0, 0])
-    utils.plot_projection(date_proj, df_projected['first_dev_confirmed'], ax=axs[1, 0])
-    utils.plot_projection(date_proj, df_projected['second_dev_confirmed'], ax=axs[2, 0])
-    utils.plot_projection(date_proj, df_projected['third_dev_confirmed'], ax=axs[3, 0])
+    utils.plot_projection(x_proj, df_projected['confirmed_fit'], ax=axs[0, 0])
+    utils.plot_projection(x_proj, df_projected['first_dev_confirmed'], ax=axs[1, 0])
+    utils.plot_projection(x_proj, df_projected['second_dev_confirmed'], ax=axs[2, 0])
+    utils.plot_projection(x_proj, df_projected['third_dev_confirmed'], ax=axs[3, 0])
 
-    utils.plot(date, df['deaths_fit'], ax=axs[0, 1], points=df['deaths'], title='deaths')
-    utils.plot(date, df['first_dev_deaths'], ax=axs[1, 1], title="f'(x)")
-    utils.plot(date, df['second_dev_deaths'], ax=axs[2, 1], title="f''(x)")
-    utils.plot(date, df['third_dev_deaths'], ax=axs[3, 1], title="f'''(x)")
+    utils.plot(x, df['deaths_fit'], ax=axs[0, 1], points=df['deaths'], title='deaths')
+    utils.plot(x, df['first_dev_deaths'], ax=axs[1, 1], title="f'(x)")
+    utils.plot(x, df['second_dev_deaths'], ax=axs[2, 1], title="f''(x)")
+    utils.plot(x, df['third_dev_deaths'], ax=axs[3, 1], title="f'''(x)")
 
-    utils.plot_projection(date_proj, df_projected['deaths_fit'], ax=axs[0, 1])
-    utils.plot_projection(date_proj, df_projected['first_dev_deaths'], ax=axs[1, 1])
-    utils.plot_projection(date_proj, df_projected['second_dev_deaths'], ax=axs[2, 1])
-    utils.plot_projection(date_proj, df_projected['third_dev_deaths'], ax=axs[3, 1])
+    utils.plot_projection(x_proj, df_projected['deaths_fit'], ax=axs[0, 1])
+    utils.plot_projection(x_proj, df_projected['first_dev_deaths'], ax=axs[1, 1])
+    utils.plot_projection(x_proj, df_projected['second_dev_deaths'], ax=axs[2, 1])
+    utils.plot_projection(x_proj, df_projected['third_dev_deaths'], ax=axs[3, 1])
 
     fig.autofmt_xdate()
     fig.text(0.5, 0.01, f'days since {config.MIN_CONFIRMED_CASES} confirmed cases', ha='center')
-    plt.suptitle(f"Country: {country}")
+    plt.suptitle(f"Country: {country}. Last update: {date}")
 
     plt.show()
 
