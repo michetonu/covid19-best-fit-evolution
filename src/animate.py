@@ -8,7 +8,7 @@ import matplotlib.animation as animation
 from sklearn.preprocessing import MinMaxScaler
 
 from src import utils, config
-
+import argparse
 import matplotlib
 matplotlib.use('TkAgg')
 
@@ -120,4 +120,12 @@ def run(country, to_plot='confirmed', save=False, path=None):
 
 
 if __name__ == "__main__":
-    run("Italy", to_plot='confirmed', save=True)
+
+
+    parser = argparse.ArgumentParser(description='Shows Fitting')
+    parser.add_argument('--country',default="Italy",choices=["Italy"])
+    parser.add_argument('--to-plot',default="confirmed",choices=["deaths","confirmed"])
+
+    args = parser.parse_args()
+
+    run(args.country, to_plot=args.to_plot, save=True)
