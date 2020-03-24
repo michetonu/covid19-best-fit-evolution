@@ -16,7 +16,7 @@ pip install -r requirements.txt
 
 ## Run
 
-pythonw -m src.animate
+python -m src.animate
 
 ## Extra requirements
 
