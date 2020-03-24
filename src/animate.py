@@ -92,7 +92,8 @@ def run(country, to_plot='confirmed', save=False, path=None):
             return [scatter, line, date, count],
 
         return animation.FuncAnimation(fig, animate, init_func=init,
-                                       frames=len(df)-MIN_POINTS, interval=1000, repeat=True)
+                                       frames=len(df)-MIN_POINTS, interval=1000,
+                                       repeat=True, repeat_delay=2)
 
     anim = plot_animation()
     if save:
