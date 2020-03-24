@@ -12,12 +12,10 @@ import argparse
 import matplotlib
 matplotlib.use('TkAgg')
 
-MIN_POINTS = 5
-ROLLING_MEAN_WINDOW = 2
-
 plt.style.use('dark_background')
 DOTS_COLOR = 'white'
 
+# Uncomment this for dark style
 # plt.style.use('seaborn-pastel')
 # DOTS_COLOR = 'black'
 
@@ -27,21 +25,39 @@ matplotlib.rc('text', usetex='false')
 
 
 def run(country, to_plot='confirmed', save=False, path=None):
+    """Create the animation.
+
+    Parameters
+    ----------
+    country: str
+        Country to plot.
+    to_plot: str, default 'confirmed'
+        'confirmed' for confirmed cases, or 'deaths' for confirmed deaths.
+    save: bool, default False
+        Whether to save the plot.
+    path: str, default None
+        Path where to save the plot (if save == False). If None, save it in 'examples/'
+    """
     if to_plot not in ['confirmed', 'deaths']:
         raise ValueError("'to_plot' must be in {'confirmed', 'deaths'}")
 
+    # Download data and get dataframe for the given country
     data = utils.get_json_from_url(config.DATA_URL)
     df = pd.DataFrame(data[country])
+
+    # Filter the data to only include data points after a certain number of cases
     if to_plot == 'confirmed':
         min_cases = config.MIN_CONFIRMED_CASES
     else:
         min_cases = config.MIN_DEATHS
-
-    y_max = df[to_plot].max() * 2
     df = df[df[to_plot] > min_cases]
     df = df.reset_index(drop=True)
+
+    # Plot limits
+    y_max = df[to_plot].max() * 2
     x_max = config.MAX_DAYS_AHEAD + len(df)
 
+    # X axis for future dates which are not in the data)
     x_future = [float(x) for x in list(np.linspace(0, x_max, num=x_max))]
 
     fig = plt.figure()
@@ -57,56 +73,71 @@ def run(country, to_plot='confirmed', save=False, path=None):
 
     def plot_animation():
         def init():
+            """Initialize the plot for the animation."""
             line.set_data([], [])
             scatter.set_offsets(np.empty(shape=(0, 2)))
             date.set_text('')
             count.set_text('')
             return [scatter, line, date, count],
 
-        def run_until_index(i):
-            x = np.array([float(x) for x in range(len(df))])[:i+MIN_POINTS]
+        def fit_until_index(i):
+            """Fit the logistic curve using data up until the current time <i>."""
+            x = np.array([float(x) for x in range(len(df))])[:i+config.MIN_POINTS]
+            cases = df[to_plot].iloc[:i+config.MIN_POINTS]
 
+            # Apply smoothing via rolling average
+            cases = cases.rolling(config.ROLLING_MEAN_WINDOW, min_periods=1, center=False).mean()
+
+            # Scale data for fitting
             m = MinMaxScaler()
-            confirmed = df[to_plot].iloc[:i+MIN_POINTS]
-            confirmed = confirmed.rolling(ROLLING_MEAN_WINDOW, min_periods=1, center=False).mean()
-
-            y = m.fit_transform(confirmed.values.reshape(-1, 1))
+            y = m.fit_transform(cases.values.reshape(-1, 1))
             y = y.reshape(1, -1)[0]
-            y_pred = utils.fit_predict(x, y, utils.logistic, x_pred=x_future)
 
-            return m.inverse_transform(y_pred.reshape(-1, 1)).reshape(1, -1)[0]
+            # Fit the logistic, then apply the inverse scaling to get actual values
+            # Reshaping is needed for scipy fitting
+            y_pred = utils.fit_predict(x, y, utils.logistic, x_pred=x_future).reshape(-1, 1)
+
+            return m.inverse_transform(y_pred).reshape(1, -1)[0]
 
         def get_date(i):
-            return df['date'].values[i+MIN_POINTS-1]
+            """Get the current date."""
+            return df['date'].values[i+config.MIN_POINTS-1]
 
         def get_count(i):
-            return df[to_plot].values[i+MIN_POINTS-1]
+            """Get the current case counts."""
+            return df[to_plot].values[i+config.MIN_POINTS-1]
 
         def get_scatter_values(i):
-            x = np.array([float(x) for x in range(len(df))])[:i+MIN_POINTS]
+            """Get actual values to plot as scatter points."""
+            x = np.array([float(x) for x in range(len(df))])[:i+config.MIN_POINTS]
 
-            y = df[to_plot].iloc[:i + MIN_POINTS]
+            y = df[to_plot].iloc[:i + config.MIN_POINTS]
 
             return x, y
 
         def animate(i):
+            """Update the animation."""
+            # Update scatter of actual values
             x_s, y_s = get_scatter_values(i)
             scatter_values = np.column_stack((x_s, y_s))
             scatter.set_offsets(scatter_values)
 
-            y = run_until_index(i)
+            # Update best fit line
+            y = fit_until_index(i)
             line.set_data(x_future, y)
             line.label = i
 
+            # Update texts
             date.set_text(get_date(i))
             count.set_text(f"# cases: {get_count(i)}")
+
             return [scatter, line, date, count],
 
         fig.tight_layout()
 
         return animation.FuncAnimation(fig, animate,
                                        init_func=init,
-                                       frames=len(df)+1-MIN_POINTS,
+                                       frames=len(df)+1-config.MIN_POINTS,
                                        interval=500,
                                        repeat=True, repeat_delay=2)
 
@@ -120,11 +151,9 @@ def run(country, to_plot='confirmed', save=False, path=None):
 
 
 if __name__ == "__main__":
-
-
     parser = argparse.ArgumentParser(description='Shows Fitting')
-    parser.add_argument('--country',default="Italy",choices=["Italy"])
-    parser.add_argument('--to-plot',default="confirmed",choices=["deaths","confirmed"])
+    parser.add_argument('--country', default='Italy', choices=['Italy'])
+    parser.add_argument('--to-plot', default='confirmed', choices=['deaths', 'confirmed'])
 
     args = parser.parse_args()
 
