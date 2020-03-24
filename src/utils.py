@@ -18,7 +18,7 @@ def scale(y):
     """Scale the data between 0 and 1 using a min-max scaler"""
     m = MinMaxScaler()
     y = m.fit_transform(y.reshape(-1, 1))
-    return y.reshape(1, -1)[0]
+    return y.reshape(1, -1)[0], m
 
 
 def logistic(x, a, c, d):
