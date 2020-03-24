@@ -93,6 +93,8 @@ def run(country, to_plot='confirmed', save=False, path=None):
             count.set_text(f"# cases: {get_count(i)}")
             return [scatter, line, date, count],
 
+        fig.tight_layout()
+
         return animation.FuncAnimation(fig, animate, init_func=init,
                                        frames=len(df)-MIN_POINTS, interval=1000,
                                        repeat=True, repeat_delay=2)
@@ -100,7 +102,7 @@ def run(country, to_plot='confirmed', save=False, path=None):
     anim = plot_animation()
     if save:
         path = path or os.path.join(config.SRC_PATH, f'../examples/{country.lower()}_animated.gif')
-        anim.save(path, writer='imagemagick')
+        anim.save(path, writer='imagemagick', fps=2)
 
     plt.show()
     plt.close()
