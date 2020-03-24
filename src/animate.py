@@ -12,40 +12,52 @@ import matplotlib
 matplotlib.use('TkAgg')
 
 MIN_POINTS = 5
-ROLLING_MEAN_WINDOW = 3
+ROLLING_MEAN_WINDOW = 2
 
 plt.style.use('seaborn-pastel')
 
 
-def run(country, save=False, path=None):
+def run(country, to_plot='confirmed', save=False, path=None):
+    if to_plot not in ['confirmed', 'deaths']:
+        raise ValueError("'to_plot' must be in {'confirmed', 'deaths'}")
+
     data = utils.get_json_from_url(config.DATA_URL)
     df = pd.DataFrame(data[country])
-    df = df[df['confirmed'] > config.MIN_CONFIRMED_CASES]
-    df = df.reset_index(drop=True)
+    if to_plot == 'confirmed':
+        min_cases = config.MIN_CONFIRMED_CASES
+    else:
+        min_cases = config.MIN_DEATHS
 
-    x_future = [float(x) for x in list(np.linspace(0, config.MAX_DAYS_AHEAD,
-                                                   num=config.MAX_DAYS_AHEAD))]
+    y_max = df[to_plot].max() * 2
+    df = df[df[to_plot] > min_cases]
+    df = df.reset_index(drop=True)
+    x_max = config.MAX_DAYS_AHEAD + len(df)
+
+    x_future = [float(x) for x in list(np.linspace(0, x_max, num=x_max))]
 
     fig = plt.figure()
-    ax = plt.axes(xlim=(0, len(x_future)), ylim=(0, 100000))
+    ax = plt.axes(xlim=(0, len(x_future)), ylim=(0, y_max))
+    scatter = ax.scatter([], [], s=4, color='black')
     line, = ax.plot([], [], lw=2)
-    scatter = ax.scatter([], [], s=3, color='black')
-    date = ax.text(85, 101000, '')
-    count = ax.text(78, 95000, '')
+    date = ax.text(x_max - x_max*0.15, y_max + y_max*0.01, '')
+    count = ax.text(x_max - x_max*0.23, y_max - y_max*0.05, '')
 
-    plt.title("Evolving logistic best fit, confirmed cases\nCounty: Italy")
+    plt.title(f"Evolving logistic best fit, {to_plot} cases\nCounty: {country}")
 
     def plot_animation():
         def init():
             line.set_data([], [])
-            return [line, scatter, date, count],
+            scatter.set_offsets(np.empty(shape=(0, 2)))
+            date.set_text('')
+            count.set_text('')
+            return [scatter, line, date, count],
 
         def run_until_index(i):
             x = np.array([float(x) for x in range(len(df))])[:i+MIN_POINTS]
 
             m = MinMaxScaler()
-            confirmed = df['confirmed'].iloc[:i+MIN_POINTS]
-            confirmed = confirmed.rolling(ROLLING_MEAN_WINDOW, min_periods=1, center=True).mean()
+            confirmed = df[to_plot].iloc[:i+MIN_POINTS]
+            confirmed = confirmed.rolling(ROLLING_MEAN_WINDOW, min_periods=1, center=False).mean()
 
             y = m.fit_transform(confirmed.values.reshape(-1, 1))
             y = y.reshape(1, -1)[0]
@@ -57,28 +69,27 @@ def run(country, save=False, path=None):
             return df['date'].values[i+MIN_POINTS-1]
 
         def get_count(i):
-            return df['confirmed'].values[i+MIN_POINTS-1]
+            return df[to_plot].values[i+MIN_POINTS-1]
 
         def get_scatter_values(i):
             x = np.array([float(x) for x in range(len(df))])[:i+MIN_POINTS]
 
-            y = df['confirmed'].iloc[:i + MIN_POINTS]
+            y = df[to_plot].iloc[:i + MIN_POINTS]
 
             return x, y
 
         def animate(i):
+            x_s, y_s = get_scatter_values(i)
+            scatter_values = np.column_stack((x_s, y_s))
+            scatter.set_offsets(scatter_values)
+
             y = run_until_index(i)
             line.set_data(x_future, y)
             line.label = i
 
-            x_s, y_s = get_scatter_values(i)
-
-            scatter_values = np.column_stack((x_s, y_s))
-            scatter.set_offsets(scatter_values)
-
             date.set_text(get_date(i))
             count.set_text(f"# cases: {get_count(i)}")
-            return [line, scatter, date, count],
+            return [scatter, line, date, count],
 
         return animation.FuncAnimation(fig, animate, init_func=init,
                                        frames=len(df)-MIN_POINTS, interval=1000, repeat=True)
@@ -93,4 +104,4 @@ def run(country, save=False, path=None):
 
 
 if __name__ == "__main__":
-    run("Italy", save=True)
+    run("Italy", to_plot='confirmed', save=False)
