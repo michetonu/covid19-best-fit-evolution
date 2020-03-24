@@ -9,3 +9,11 @@ Data is pulled from https://github.com/pomber/covid19/.
 **Italy**:
 
 ![alt text](https://github.com/michetonu/covid19-best-fit-evolution/blob/master/examples/italy_animated.gif?raw=true)
+
+## Install:
+
+pip install -r requirements.txt
+
+## Run
+
+pythonw -m src.animate
