@@ -42,7 +42,9 @@ def run(country, to_plot='confirmed', save=False, path=None):
     date = ax.text(x_max - x_max*0.15, y_max + y_max*0.01, '')
     count = ax.text(x_max - x_max*0.23, y_max - y_max*0.05, '')
 
-    plt.title(f"Evolving logistic best fit, {to_plot} cases\nCounty: {country}")
+    plt.title(f"Logistic best fit over time, {to_plot} cases\nCounty: {country}")
+    plt.xlabel(f"Days since {min_cases} {to_plot} cases")
+    plt.ylabel(f"# {to_plot}")
 
     def plot_animation():
         def init():
