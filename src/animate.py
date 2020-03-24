@@ -104,4 +104,4 @@ def run(country, to_plot='confirmed', save=False, path=None):
 
 
 if __name__ == "__main__":
-    run("Italy", to_plot='confirmed', save=False)
+    run("Italy", to_plot='confirmed', save=True)
