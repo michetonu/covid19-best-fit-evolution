@@ -1,3 +1,4 @@
+"""Create an animation of the best-fit logistic curve over time."""
 import os
 
 import matplotlib.pyplot as plt
@@ -14,7 +15,15 @@ matplotlib.use('TkAgg')
 MIN_POINTS = 5
 ROLLING_MEAN_WINDOW = 2
 
-plt.style.use('seaborn-pastel')
+plt.style.use('dark_background')
+DOTS_COLOR = 'white'
+
+# plt.style.use('seaborn-pastel')
+# DOTS_COLOR = 'black'
+
+matplotlib.rc('font', family='sans-serif')
+matplotlib.rc('font', serif='Helvetica Neue')
+matplotlib.rc('text', usetex='false')
 
 
 def run(country, to_plot='confirmed', save=False, path=None):
@@ -36,13 +45,13 @@ def run(country, to_plot='confirmed', save=False, path=None):
     x_future = [float(x) for x in list(np.linspace(0, x_max, num=x_max))]
 
     fig = plt.figure()
-    ax = plt.axes(xlim=(0, len(x_future)), ylim=(0, y_max))
-    scatter = ax.scatter([], [], s=4, color='black')
+    ax = plt.axes(xlim=(0, len(x_future)), ylim=(0-(y_max*0.05), y_max))
+    scatter = ax.scatter([], [], s=15, color=DOTS_COLOR)
     line, = ax.plot([], [], lw=2)
     date = ax.text(x_max - x_max*0.15, y_max + y_max*0.01, '')
     count = ax.text(x_max - x_max*0.23, y_max - y_max*0.05, '')
 
-    plt.title(f"Logistic best fit over time, {to_plot} cases\nCounty: {country}")
+    plt.title(f"Logistic best fit over time, {to_plot} cases\nCountry: {country}")
     plt.xlabel(f"Days since {min_cases} {to_plot} cases")
     plt.ylabel(f"# {to_plot}")
 
@@ -95,14 +104,16 @@ def run(country, to_plot='confirmed', save=False, path=None):
 
         fig.tight_layout()
 
-        return animation.FuncAnimation(fig, animate, init_func=init,
-                                       frames=len(df)-MIN_POINTS, interval=1000,
+        return animation.FuncAnimation(fig, animate,
+                                       init_func=init,
+                                       frames=len(df)+1-MIN_POINTS,
+                                       interval=500,
                                        repeat=True, repeat_delay=2)
 
     anim = plot_animation()
     if save:
         path = path or os.path.join(config.SRC_PATH, f'../examples/{country.lower()}_animated.gif')
-        anim.save(path, writer='imagemagick', fps=2)
+        anim.save(path, writer='imagemagick', fps=1.5)
 
     plt.show()
     plt.close()
