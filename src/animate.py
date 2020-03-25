@@ -25,7 +25,7 @@ matplotlib.rc('font', serif='Helvetica Neue')
 matplotlib.rc('text', usetex='false')
 
 
-def run(country, region= "", to_plot='confirmed', save=False, path=None,cached=False,repeat=True):
+def run(country, region="", to_plot='confirmed', save=False, path=None, cached=False, repeat=True):
     """Create the animation.
 
     Parameters
@@ -33,7 +33,7 @@ def run(country, region= "", to_plot='confirmed', save=False, path=None,cached=F
     country: str
         Country to plot.
     region: str
-        Region of the given contry, currently only for Italy supportorted ('all', NAME or mNAME for excluding NAME region)
+        Region of the given contry, currently supported only for Italy ('all', NAME or mNAME for excluding NAME region)
     to_plot: str, default 'confirmed'
         'confirmed' for confirmed cases, or 'deaths' for confirmed deaths.
     save: bool, default False
@@ -55,13 +55,15 @@ def run(country, region= "", to_plot='confirmed', save=False, path=None,cached=F
     elif country == "Italy":
         target = "italy.json"
         url = config.ITALYREGION_URL
+    else:
+        raise Exception("Only Italy supports region filtering")
 
     if cached:
         if os.path.isfile(target):
-            data = json.load(open(target,"r"))
+            data = json.load(open(target, "r"))
         else:
             data = utils.get_json_from_url(url)
-            json.dump(data,open(target,"w"))
+            json.dump(data, open(target, "w"))
     else:
         data = utils.get_json_from_url(url)
 
@@ -69,16 +71,15 @@ def run(country, region= "", to_plot='confirmed', save=False, path=None,cached=F
         df = pd.DataFrame(data[country])
     elif country == "Italy":
         df = pd.DataFrame(data)
-        df = df.rename(columns=dict(data="date",totale_attualmente_positivi="confirmed",deceduti="deaths",denominazione_regione="region"))
+        df = df.rename(columns=dict(data="date", totale_attualmente_positivi="confirmed",
+                                    deceduti="deaths", denominazione_regione="region"))
         if region != "all" and region[0] != "m":
             df = df[df["region"] == region]
         else:
             if region[0] == "m":
-                print("filtering")
                 df = df[df["region"] != region[1:]]
-                print(df.describe())
-            df = df.groupby(["date"],as_index=False).agg(dict([(to_plot,"sum")]))
-            print(df.describe())
+            df = df.groupby(["date"], as_index=False).agg(
+                dict([(to_plot, "sum")]))
 
     if to_plot == 'confirmed':
         min_cases = config.MIN_CONFIRMED_CASES
@@ -119,11 +120,13 @@ def run(country, region= "", to_plot='confirmed', save=False, path=None,cached=F
 
         def fit_until_index(i):
             """Fit the logistic curve using data up until the current time <i>."""
-            x = np.array([float(x) for x in range(len(df))])[:i+config.MIN_POINTS]
+            x = np.array([float(x) for x in range(len(df))])[
+                :i+config.MIN_POINTS]
             cases = df[to_plot].iloc[:i+config.MIN_POINTS]
 
             # Apply smoothing via rolling average
-            cases = cases.rolling(config.ROLLING_MEAN_WINDOW, min_periods=1, center=False).mean()
+            cases = cases.rolling(config.ROLLING_MEAN_WINDOW,
+                                  min_periods=1, center=False).mean()
 
             # Scale data for fitting
             m = MinMaxScaler()
@@ -132,7 +135,8 @@ def run(country, region= "", to_plot='confirmed', save=False, path=None,cached=F
 
             # Fit the logistic, then apply the inverse scaling to get actual values
             # Reshaping is needed for scipy fitting
-            y_pred = utils.fit_predict(x, y, utils.logistic, x_pred=x_future).reshape(-1, 1)
+            y_pred = utils.fit_predict(
+                x, y, utils.logistic, x_pred=x_future).reshape(-1, 1)
 
             return m.inverse_transform(y_pred).reshape(1, -1)[0]
 
@@ -146,7 +150,8 @@ def run(country, region= "", to_plot='confirmed', save=False, path=None,cached=F
 
         def get_scatter_values(i):
             """Get actual values to plot as scatter points."""
-            x = np.array([float(x) for x in range(len(df))])[:i+config.MIN_POINTS]
+            x = np.array([float(x) for x in range(len(df))])[
+                :i+config.MIN_POINTS]
 
             y = df[to_plot].iloc[:i + config.MIN_POINTS]
 
@@ -189,17 +194,20 @@ def run(country, region= "", to_plot='confirmed', save=False, path=None,cached=F
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Shows Fitting')
-<<<<<<< HEAD
-    parser.add_argument('--country',default="Italy")
-    parser.add_argument('--region',default="")
-    parser.add_argument('--to-plot',default="confirmed",choices=["deaths","confirmed"])
-    parser.add_argument('--cached',action="store_true")
-    parser.add_argument('--no-repeat',action="store_true")
-=======
-    parser.add_argument('--country', default='Italy', choices=['Italy'])
-    parser.add_argument('--to-plot', default='confirmed', choices=['deaths', 'confirmed'])
+<< << << < HEAD
+parser.add_argument('--country', default="Italy")
+parser.add_argument('--region', default="")
+parser.add_argument('--to-plot', default="confirmed",
+                    choices=["deaths", "confirmed"])
+parser.add_argument('--cached', action="store_true")
+parser.add_argument('--no-repeat', action="store_true")
+== == == =
+parser.add_argument('--country', default='Italy', choices=['Italy'])
+parser.add_argument('--to-plot', default='confirmed',
+                    choices=['deaths', 'confirmed'])
 
->>>>>>> 7bf628770aca9f71448256d988db75975313ff2a
-    args = parser.parse_args()
+>>>>>> > 7bf628770aca9f71448256d988db75975313ff2a
+args = parser.parse_args()
 
-    run(args.country, region=args.region, to_plot=args.to_plot, save=True,cached=args.cached,repeat=not args.no_repeat)
+run(args.country, region=args.region, to_plot=args.to_plot,
+    save=True, cached=args.cached, repeat=not args.no_repeat)
