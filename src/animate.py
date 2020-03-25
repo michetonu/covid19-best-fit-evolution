@@ -8,6 +8,7 @@ import matplotlib.animation as animation
 from sklearn.preprocessing import MinMaxScaler
 
 from src import utils, config
+import json
 import argparse
 import matplotlib
 matplotlib.use('TkAgg')
@@ -26,12 +27,40 @@ matplotlib.rc('font', serif='Helvetica Neue')
 matplotlib.rc('text', usetex='false')
 
 
-def run(country, to_plot='confirmed', save=False, path=None):
+def run(country, region= "", to_plot='confirmed', save=False, path=None,cached=False,repeat=True):
     if to_plot not in ['confirmed', 'deaths']:
         raise ValueError("'to_plot' must be in {'confirmed', 'deaths'}")
 
-    data = utils.get_json_from_url(config.DATA_URL)
-    df = pd.DataFrame(data[country])
+    if region == "":
+        target = "world.json"
+        url = config.DATA_URL
+    elif country == "Italy":
+        target = "italy.json"
+        url = config.ITALYREGION_URL
+
+    if cached:
+        if os.path.isfile(target):
+            data = json.load(open(target,"r"))
+        else:
+            data = utils.get_json_from_url(url)
+            json.dump(data,open(target,"w"))
+    else:
+        data = utils.get_json_from_url(url)
+
+    if region == "":
+        df = pd.DataFrame(data[country])
+    elif country == "Italy":
+        df = pd.DataFrame(data)
+        df = df.rename(columns=dict(data="date",totale_attualmente_positivi="confirmed",deceduti="deaths",denominazione_regione="region"))
+        if region != "all" and region[0] != "m":
+            df = df[df["region"] == region]
+        else:
+            if region[0] == "m":
+                print("filtering")
+                df = df[df["region"] != region[1:]]
+                print(df.describe())
+            df = df.groupby(["date"],as_index=False).agg(dict([(to_plot,"sum")]))
+            print(df.describe())
     if to_plot == 'confirmed':
         min_cases = config.MIN_CONFIRMED_CASES
     else:
@@ -50,8 +79,11 @@ def run(country, to_plot='confirmed', save=False, path=None):
     line, = ax.plot([], [], lw=2)
     date = ax.text(x_max - x_max*0.15, y_max + y_max*0.01, '')
     count = ax.text(x_max - x_max*0.23, y_max - y_max*0.05, '')
-
-    plt.title(f"Logistic best fit over time, {to_plot} cases\nCountry: {country}")
+    if region != "":
+        tregion = "Region: " + region
+    else:
+        tregion = ""
+    plt.title(f"Logistic best fit over time, {to_plot} cases\nCountry: {country} {tregion}")
     plt.xlabel(f"Days since {min_cases} {to_plot} cases")
     plt.ylabel(f"# {to_plot}")
 
@@ -108,11 +140,11 @@ def run(country, to_plot='confirmed', save=False, path=None):
                                        init_func=init,
                                        frames=len(df)+1-MIN_POINTS,
                                        interval=500,
-                                       repeat=True, repeat_delay=2)
+                                       repeat=repeat, repeat_delay=2)
 
     anim = plot_animation()
     if save:
-        path = path or os.path.join(config.SRC_PATH, f'../examples/{country.lower()}_animated.gif')
+        path = path or os.path.join(config.SRC_PATH, f'../examples/{country.lower()}{region.lower()}_animated.gif')
         anim.save(path, writer='imagemagick', fps=1.5)
 
     plt.show()
@@ -123,9 +155,11 @@ if __name__ == "__main__":
 
 
     parser = argparse.ArgumentParser(description='Shows Fitting')
-    parser.add_argument('--country',default="Italy",choices=["Italy"])
+    parser.add_argument('--country',default="Italy")
+    parser.add_argument('--region',default="")
     parser.add_argument('--to-plot',default="confirmed",choices=["deaths","confirmed"])
-
+    parser.add_argument('--cached',action="store_true")
+    parser.add_argument('--no-repeat',action="store_true")
     args = parser.parse_args()
 
-    run(args.country, to_plot=args.to_plot, save=True)
+    run(args.country, region=args.region, to_plot=args.to_plot, save=True,cached=args.cached,repeat=not args.no_repeat)
