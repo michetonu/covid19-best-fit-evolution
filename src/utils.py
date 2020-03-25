@@ -3,8 +3,6 @@ from urllib.request import urlopen
 
 import numpy as np
 import scipy.optimize as opt
-import seaborn as sns
-from sklearn.preprocessing import MinMaxScaler
 
 
 def get_json_from_url(url):
